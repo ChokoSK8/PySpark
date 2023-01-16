@@ -1,0 +1,49 @@
+		--number of observations--
+	df.count()
+
+		--number of columns--
+	len(df.columns)
+
+		--which was most ordered--
+	c = df.groupby('item_name').sum('quantity')
+	c = c.orderBy(col("sum(quantity)").desc())
+	c.show(1)
+
+		--how many item ordered--
+	df.select(sum('quantity').alias('total')).show()
+
+		--regex_replace && cast--
+	c = df.withColumn('float price', regex_replace(col('item_price'), ['$'], ''))
+	c = c.withColumn('float price', col('float price').cast(FloatType()))
+	c.select(sum('float price').alias('total price')).show()
+
+		--average revenue amount per order--
+	First solution:
+	c = df.select(df.item_price * df.quantity)
+	c = c.select(sum(c['(item_price * quantity)']))
+	c = c.collect()[0][0]
+	n = df.orderBy(col('order_id').desc())
+	n = n.collect()[0]['order_id']
+	c / n
+	Second solution:
+	c = df.withColumn('total_price', df.quantity * df.item_price)
+	c = c.groupby('order_id').sum('total_price')
+	c.select(avg('sum(total_price)')).show()
+
+		--number of distinct value--
+	df.select("item_name").distinct().count()
+
+		--summarize dataframe--
+	df.summary()
+
+		--number of item cost more than 10--
+	c = df.select('item_price', 'item_name').where(df.item_price > 10)
+	c.select('item_name').distinct().count()
+
+		--most expensive item--
+	max = df.select(.spmax('item_price')).collect()[0][0]
+	df.select('item_price', 'item_name').where(c.item_price == max)
+
+		--how many times item ordered--
+	c = df.select('item_name', 'quantity').where(c.item_name == 'name')
+	c.select(sum('quantity'))
